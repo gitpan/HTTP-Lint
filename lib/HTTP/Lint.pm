@@ -158,9 +158,11 @@ sub response_lint
 	push @return, error 'Proxy-Authenticate header missing for a 407 response' => 10,4,8
 		if $response->code == 407
 		and not defined $response->header ('Proxy-Authenticate');
-	push @return, warning 'Retry-After header missing for a non-commital response' => 10,5,4
-		if $response->code =~ /^(503|202)$/
+	push @return, warning 'Retry-After header missing for a 503 response' => 10,5,4
+		if $response->code == 503
 		and not defined $response->header ('Retry-After');
+	push @return, warning 'Undefined Refresh header is present'
+		if defined $response->header ('Refresh');
 	push @return, error '405 without allowed methods specified' => 10,4,6
 		if $response->code == 405
 		and not defined $response->header ('Allow');
@@ -194,7 +196,7 @@ sub transaction_lint
 		and ($response->protocol || 'HTTP/1.0') eq 'HTTP/1.1';
 	push @return, warning 'Action with side effects conducted for a '.$request->method.' request' => 13,9
 		if $request->method =~ /^(GET|HEAD|TRACE|OPTIONS)$/
-		and $response->code =~ /^20[12]$/;
+		and $response->code == 201;
 	push @return, error 'HEAD response with non-empty body' => 4,3
 		if $request->method eq 'HEAD'
 		and $response->content;
@@ -226,7 +228,7 @@ sub pretty
 		or die 'Not a HTTP::Lint::Message';
 	return (ref $self eq 'HTTP::Lint::Error' ? 'ERROR: ' : 'WARNING: ').
 		$self->[0].
-		(@{$self->[1]} ? ' [RFC2616: '.join ('.', @{$self->[1]}).']' : 'FFF');
+		(@{$self->[1]} ? ' [RFC2616: '.join ('.', @{$self->[1]}).']': '');
 }
 
 =back
